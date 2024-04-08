@@ -42,8 +42,9 @@
                         <field name="date_availability"/>
                     </group>
                     <group>
-                        <field name="selling_price"/>
                         <field name="expected_price"/>
+                        <field name="best_price"/>
+                        <field name="selling_price"/>
                     </group>
                 </group>
                 <sheet>
@@ -58,10 +59,11 @@
                                 <field name="garden" string="Garden"/>
                                 <field name="garden_area" string="Garden Area"/>
                                 <field name="garden_orientation" string="Garden Orientation"/>
+                                <field name="total_area"/>
                             </group>
                         </page>
                         <page string="Offers">
-                            <field name="offer_ids" domain="[('status', 'in', ('accepted', 'canceled'))]"/>
+                            <field name="offer_ids" domain="[('state', 'in', ('accepted', 'canceled'))]"/>
                         </page>
                         <page string="Other Info">
                             <group>
