@@ -1,9 +1,16 @@
 from odoo import models, fields, api
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
+from odoo.tools import float_compare, float_is_zero
 
 class EstateProperty(models.Model):
     _name = "estate.property"
     _description = "Real Estate Property"
+
+    _sql_constraints = [
+        ("check_expected_price", "CHECK(expected_price > 0)", "The expected price must be strictly positive"),
+        ("check_selling_price", "CHECK(selling_price >= 0)", "The selling price must be positive"),
+    ]
+    _order = "id desc"
 
     name = fields.Char(required=True)
     description = fields.Text()
@@ -61,11 +68,28 @@ class EstateProperty(models.Model):
             self.garden_orientation = False
 
     def action_sold(self):
-        if "canceled" in self.mapped("state"):
-            raise UserError("Canceled properties cannot be sold.")
-        return self.write({"state": "sold"})
-
+        for record in self:
+            if record.state in ['new', 'offer_received']:
+                record.state = 'sold'
+            else:
+                raise UserError("Cannot mark property as sold. Invalid state.")
+    
     def action_cancel(self):
-        if "sold" in self.mapped("state"):
-            raise UserError("Sold properties cannot be canceled.")
-        return self.write({"state": "canceled"})
+        for record in self:
+            if record.state == 'sold':
+                raise UserError("Cannot cancel sold property.")
+            else:
+                record.state = 'canceled'
+    
+
+    @api.constrains("expected_price", "selling_price")
+    def _check_price_difference(self):
+        for prop in self:
+            if (
+                not float_is_zero(prop.selling_price, precision_rounding=0.01)
+                and float_compare(prop.selling_price, prop.expected_price * 90.0 / 100.0, precision_rounding=0.01) < 0
+            ):
+                raise ValidationError(
+                    "The selling price must be at least 90% of the expected price! "
+                    + "You must reduce the expected price if you want to accept this offer."
+                )
