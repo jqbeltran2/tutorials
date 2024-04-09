@@ -36,7 +36,7 @@ class EstateProperty(models.Model):
     property_type_id = fields.Many2one('estate.property.type', string='Property Type')
     user_id = fields.Many2one("res.users", string="Salesman", default=lambda self: self.env.user)
     buyer_id = fields.Many2one("res.partner", string="Buyer", readonly=True, copy=False)
-    tag_ids = fields.Many2many("estate.property.tag", string="Tags")
+    tag_ids = fields.Many2many(comodel_name="estate.property.tag", string="Tags")
     offer_ids = fields.One2many("estate.property.offer", "property_id", string="Offers")
 
     total_area = fields.Integer(
@@ -69,7 +69,7 @@ class EstateProperty(models.Model):
 
     def action_sold(self):
         for record in self:
-            if record.state in ['new', 'offer_received']:
+            if record.state in ['new', 'offer_received', 'offer_accepted']:
                 record.state = 'sold'
             else:
                 raise UserError("Cannot mark property as sold. Invalid state.")
@@ -93,3 +93,8 @@ class EstateProperty(models.Model):
                     "The selling price must be at least 90% of the expected price! "
                     + "You must reduce the expected price if you want to accept this offer."
                 )
+
+    def unlink(self):
+        if not set(self.mapped("state")) <= {"new", "canceled"}:
+            raise UserError("Only new and canceled properties can be deleted.")
+        return super().unlink()

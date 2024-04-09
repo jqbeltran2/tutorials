@@ -1,9 +1,7 @@
 from odoo import models, fields, api
 from dateutil.relativedelta import relativedelta
 from odoo.exceptions import UserError
-import logging
-
-_logger = logging.getLogger(__name__)
+from odoo.tools.float_utils import float_compare
 
 class EstatePropertyOffer(models.Model):
     _name = "estate.property.offer"
@@ -39,12 +37,9 @@ class EstatePropertyOffer(models.Model):
     
     def action_accept(self):
         for record in self:
-            _logger.info("Record ID: %s", record.id)
-            _logger.info("Current state: %s", record.state)
             if record.state == "accepted":
                 raise UserError("An offer as already been accepted.")
             record.state = "accepted"
-            _logger.info("New state: %s", record.state)
             record.property_id.state = "offer_accepted"
             record.property_id.selling_price = record.price
             record.property_id.buyer_id = record.partner_id.id
@@ -52,3 +47,27 @@ class EstatePropertyOffer(models.Model):
     def action_refuse(self):
         for record in self:
             record.state = "refused"
+
+    @api.model_create_multi
+    def create(self, values):
+        properties = {}
+        for value in values:
+            property_id = value['property_id']
+            if property_id not in properties:
+                properties[property_id] = []
+            properties[property_id].append(value)
+
+        for property_id, offers in properties.items():
+            if self.env['estate.property'].browse(property_id).state == 'sold':
+                raise UserError(("You cannot create an offer for a sold property."))
+
+            best_price = self.env['estate.property'].browse(property_id).best_price
+            records = super().create(offers)
+
+            for record in records:
+                if float_compare(record.price, best_price, 2) == -1:
+                    raise UserError(("The price of your offer should not be lower than the best offer."))
+
+                record.property_id.state = 'offer_received'
+
+        return records
