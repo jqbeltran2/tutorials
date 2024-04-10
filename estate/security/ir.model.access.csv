@@ -1,5 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_estate_property,Access Estate Property,model_estate_property,base.group_user,1,1,1,1
-access_estate_property_type,Access Estate Property Type,model_estate_property_type,base.group_user,1,1,1,1
-access_estate_property_tag,access_estate_property_tag,model_estate_property_tag,base.group_user,1,1,1,1
-access_estate_property_offer,access_estate_property_offer,model_estate_property_offer,base.group_user,1,1,1,1
+access_real_estate_manager,Real Estate Manager,model_estate_property,estate_group_manager,1,1,1,1
+access_real_estate_agent,Real Estate Agent,model_estate_property,estate_group_user,1,1,1,0
+access_real_estate_agent_type_tags,Real Estate Agent Type/Tags,model_estate_property_type,estate_group_user,1,0,0,0
+access_real_estate_no_delete,No Delete Properties,model_estate_property,base.group_user,1,0,0,0

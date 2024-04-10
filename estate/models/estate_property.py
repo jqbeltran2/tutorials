@@ -98,3 +98,11 @@ class EstateProperty(models.Model):
         if not set(self.mapped("state")) <= {"new", "canceled"}:
             raise UserError("Only new and canceled properties can be deleted.")
         return super().unlink()
+    
+    @api.constrains('state')
+    def _check_accepted_offers(self):
+        for property in self:
+            if property.state == 'sold' and not property.offer_ids.filtered(lambda offer: offer.state == 'accepted'):
+                raise ValidationError("Cannot sell a property with no accepted offers.")
+            
+    
